@@ -16,7 +16,7 @@ port = 0
 def run_command(command):
     # trim the new line
     command = command.rstrip()
-    # run the command and get the output back
+    # run the commands and get the output back
 
 
 def client_sender(buffer):
