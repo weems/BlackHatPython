@@ -1,6 +1,7 @@
 import getopt
 import socket
 import subprocess
+import sys
 import threading
 
 # define some global variables
@@ -47,7 +48,7 @@ def client_handler(client_socket):
         # now we take these bytes and try to write them out
         try:
             file_descriptor = open(upload_destination, "wb")
-            file_descriptor.write(file_buffer)
+            file_descriptor.write(file_buffer.encode())
             file_descriptor.close()
 
             #acknowledge that we wrote the file out
@@ -93,10 +94,56 @@ def server_loop():
 
     server.listen(5)
 
+    while True:
+        client_socket, addr = server.accept()
 
+        # spin off a thread to handle our new client
+        client_thread = threading.Thread(target=client_handler,args=(client_socket,))
+        client_thread.start()
 
+# if we don't listen we are a client... make it so
 def client_sender(buffer):
-    client = socket.socket()
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        # connect to our target host
+        client.connect((target,port))
+
+        # if we detect input from stdin send it
+        # if not we are going to wait for the user to punch some in
+
+        if len(buffer):
+            client.send(buffer)
+
+        while True:
+
+            # now wait for data back
+            recv_len = 1
+            response = ""
+
+            while recv_len:
+                data = client.recv(4096)
+                recv_len = len(data)
+                response += data
+
+                if recv_len < 4096:
+                    break
+
+            print(response)
+
+            # wait for more input
+            buffer = input("")
+            buffer += "\n"
+
+            # send it off
+            client.send(buffer.encode())
+
+    except:
+
+        # just catch generic errors - you can do your homework to beef this up
+        print("[*] Exception! Exiting.")
+        # teardown the connection
+        client.close()
 
 
 def usage():
@@ -117,10 +164,6 @@ def usage():
     sys.exit(0)
 
 
-# def client_sender(buffer):
-#     pass
-
-
 def main():
     global listen
     global port
@@ -139,6 +182,7 @@ def main():
         print(str(err))
         usage()
 
+    o: object
     for o,a in opts:
         if o in ("-h","--help"):
             usage()
