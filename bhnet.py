@@ -1,8 +1,8 @@
-import getopt
 import socket
 import subprocess
 import sys
 import threading
+import getopt
 
 # define some global variables
 
@@ -175,6 +175,7 @@ def main():
     global command
     global upload_destination
     global target
+    global opts
 
     if not len(sys.argv[1:]):
         usage()
