@@ -13,10 +13,86 @@ target = ""
 upload_destination = ""
 port = 0
 
+# this runs a command and returns the output
 def run_command(command):
     # trim the new line
     command = command.rstrip()
     # run the commands and get the output back
+    try:
+        output = subprocess.check_output(command,stderr=subprocess.STDOUT,shell=True)
+    except:
+        output = "Failed to execute command.\r\n"
+
+    # send the output back to the client
+    return output
+
+# this handles incoming client connections
+def client_handler(client_socket):
+    global upload
+    global execute
+    global command
+
+    # check for upload
+    if len(upload_destination):
+        # read in all of the bytes
+        file_buffer = ""
+        # keep reading data until none is available
+        while True:
+            data = client_socket.recv(1024)
+
+            if not data:
+                break
+            else:
+                file_buffer += data
+        # now we take these bytes and try to write them out
+        try:
+            file_descriptor = open(upload_destination, "wb")
+            file_descriptor.write(file_buffer)
+            file_descriptor.close()
+
+            #acknowledge that we wrote the file out
+            client_socket.send("Successfully saved file to %s\r\n" % upload_destination)
+        except:
+            client_socket.send("Failed to save file to %s\r\n" % upload_destination)
+
+    # check for command execution
+    if len(execute):
+        # run the command
+        output =run_command(execute)
+
+        client_socket.send(output)
+
+    # now we go into another loop if a command shell was requested
+    if command:
+        while True:
+            # show a simple prompt
+            client_socket.send("<BHP:#> ")
+
+            # now we receive until we see a linefeed (enter key)
+            cmd_buffer = ""
+            while "\n" not in cmd_buffer:
+                cmd_buffer += client_socket.recv(1024)
+
+            # we have a valid command so execute it and send back the results
+            response = run_command(cmd_buffer)
+
+            # send back the response
+            client_socket.send(response)
+
+# this is for incoming connections
+def server_loop():
+    global target
+    global port
+
+    # if no target is defined we listen on all interfaces
+    if not len(target):
+        target = "0.0.0.0"
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((target, port))
+
+    server.listen(5)
+
 
 
 def client_sender(buffer):
