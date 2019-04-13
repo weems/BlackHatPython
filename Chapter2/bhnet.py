@@ -187,7 +187,6 @@ def main():
         print(str(err))
         usage()
 
-    o: object
     for o, a in opts:
         if o in ("-h", "--help"):
             usage()
