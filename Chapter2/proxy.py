@@ -7,6 +7,7 @@ import threading
 # http://code.activestate.com/recipes/142812-hex-dumper/
 def hexdump(src, length=16):
     result = []
+    print(result)
     digits = 4 if isinstance(src, unicode) else 2
 
     for i in xrange(0, len(src), length):
